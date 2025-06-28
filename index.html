@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تريكس | مواقع وتطبيقات مفيدة</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #3b82f6; /* blue-500 */
+        }
+        body {
+            font-family: 'Cairo', sans-serif;
+            scroll-behavior: smooth;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-link.active { color: var(--primary-color); font-weight: 700; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .section-title { font-size: 1.875rem; font-weight: 700; margin-bottom: 1.5rem; border-right: 4px solid var(--primary-color); padding-right: 1rem; }
+        .card-img-adjusted { object-position: center 75%; }
+        #fab-container { position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 45; display: flex; flex-direction: row-reverse; align-items: center; gap: 0.75rem; }
+        #fab-main-btn {
+            width: 3.5rem; height: 3.5rem; border-radius: 9999px; background-color: var(--primary-color);
+            color: white; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.2s ease-out, background-color 0.2s;
+            cursor: pointer;
+        }
+        #fab-main-btn:hover { transform: scale(1.1); background-color: #2563eb; }
+        #fab-label {
+            background-color: white; color: #1e293b; font-weight: 600; padding: 0.5rem 1rem;
+            border-radius: 9999px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            white-space: nowrap; cursor: pointer;
+            transform: scale(0.9) translateX(10px); opacity: 0; pointer-events: none;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        }
+        #fab-container.active #fab-label { transform: scale(1) translateX(0); opacity: 1; pointer-events: auto; }
+        #fab-container.hidden-by-menu { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-blue-600">تريكس</a>
+            <div class="flex-1 max-w-lg mx-4">
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="ابحث عن أداة, موقع, فكرة..." class="w-full pl-10 pr-4 py-2 border rounded-full bg-slate-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400"></i></div>
+                </div>
+            </div>
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                <a href="#" id="home-link" class="nav-link text-slate-600 hover:text-blue-500 transition-colors">الرئيسية</a>
+                <button id="contact-btn" class="nav-link text-slate-600 hover:text-blue-500 transition-colors">تواصل معنا</button>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-slate-600 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4"></div>
+    </header>
+
+    <div id="app-body">
+        <main id="main-content-view" class="container mx-auto px-6 py-8"></main>
+        <div id="full-page-view" class="hidden"></div>
+    </div>
+    
+    <div id="details-modal-view" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4"></div>
+    <div id="contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4"></div>
+    <div id="add-content-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4"></div>
+    <div id="no-results-container" class="hidden text-center py-16">
+        <i class="fas fa-search-minus text-6xl text-slate-400 mb-4"></i>
+        <h3 class="text-2xl font-bold text-slate-600">لا توجد نتائج مطابقة لبحثك</h3>
+        <p class="text-slate-500 mt-2">جرّب كلمة بحث أخرى.</p>
+    </div>
+
+    <div id="fab-container">
+        <div id="fab-label">أضف محتواك</div>
+        <div id="fab-main-btn"><i class="fas fa-plus text-xl"></i></div>
+    </div>
+
+    <footer class="bg-white border-t mt-8"><div class="container mx-auto px-6 py-6 text-center text-slate-500"><p>تم تطويره </> بشغف بواسطة مُحَمَّد</p></div></footer>
+
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const appData = [
+                { 
+                    id: 'useful-apps', 
+                    title: 'تطبيقات مفيدة', 
+                    viewType: 'modal', 
+                    linkText: 'رابط التطبيق', 
+                    items: [
+                        { id: 'app-1', title: 'Notion', shortDesc: 'مساحة عمل متكاملة لتنظيم كل شيء في حياتك؛ من الملاحظات والمشاريع إلى قواعد البيانات الشخصية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750931315/Picsart_25-06-24_14-49-38-034_y5yd1r.jpg', externalLink: 'https://play.google.com/store/apps/details?id=notion.id', apkLink: 'https://akwaam.com/notion-ai-apk/' },
+                        { id: 'app-2', title: 'Todoist', shortDesc: 'مدير مهام رائع لتنظيم أعمالك، تتبع أهدافك، وتصفية ذهنك من الفوضى اليومية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974183/Picsart_25-06-24_14-52-31-444_jcentv.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.todoist', apkLink: 'https://apkpure.com/p/com.todoist' },
+                        { id: 'app-3', title: 'Calm', shortDesc: 'بوابتك إلى الهدوء والاسترخاء، يساعدك على تحسين جودة النوم وتقليل التوتر عبر التأمل الموجه.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974173/Picsart_25-06-24_14-54-22-072_wtiaeg.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.calm.android', apkLink: 'https://apkpure.com/p/com.calm.android' },
+                        { id: 'app-4', title: 'MyFitnessPal', shortDesc: 'مدربك الصحي الشخصي، يتيح لك تتبع السعرات الحرارية والتمارين الرياضية بسهولة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974164/Picsart_25-06-24_14-57-46-295_blwzyy.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.myfitnesspal.android', apkLink: 'https://apkpure.com/p/com.myfitnesspal.android' },
+                        { id: 'app-5', title: 'Duolingo', shortDesc: 'أسهل وأمتع طريقة لتعلم لغات جديدة، عبر دروس قصيرة وتفاعلية تشبه الألعاب.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974186/Picsart_25-06-24_14-59-15-060_qaise4.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.duolingo', apkLink: 'https://apkpure.com/p/com.duolingo' },
+                        { id: 'app-6', title: 'Canva', shortDesc: 'أداة تصميم سحرية تمكّنك من إنشاء تصاميم احترافية بسهولة، حتى لو لم تكن مصمماً.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974198/Picsart_25-06-24_15-03-07-951_ghmlvg.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.canva.editor', apkLink: 'https://apk.masdrk.com/apps/canva/' },
+                        { id: 'app-7', title: 'Adobe Scan', shortDesc: 'يحوّل هاتفك إلى ماسح ضوئي (سكانر) فائق الجودة، لإنشاء ملفات PDF واضحة من أي مستند.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974187/Picsart_25-06-24_15-06-48-920_km2e0y.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.adobe.scan.android', apkLink: 'https://adobe-scan.ar.uptodown.com/android' },
+                        { id: 'app-8', title: 'LastPass', shortDesc: 'خزنة رقمية آمنة لحفظ جميع كلمات المرور الخاصة بك، لست بحاجة لتذكرها بعد الآن.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974187/Picsart_25-06-24_15-09-43-283_mj2bu6.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.lastpass.lpandroid', apkLink: 'https://www.apkmirror.com/apk/lastpass-us-lp/lastpass-lastpass/' },
+                        { id: 'app-9', title: 'Google Maps', shortDesc: 'خريطتك للعالم، لا غنى عنه للتنقل واستكشاف الأماكن ومعرفة حالة الطرق لحظة بلحظة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974168/Picsart_25-06-24_15-11-54-759_kyg2s5.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.google.android.apps.maps', apkLink: 'https://apkpure.com/p/com.google.android.apps.maps' },
+                        { id: 'app-10', title: 'JustWatch', shortDesc: 'يحل مشكلة "أين أشاهد؟"؛ يخبرك على أي خدمة بث يتوفر الفيلم أو المسلسل الذي تبحث عنه.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974204/Picsart_25-06-24_15-14-31-589_l81qry.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.justwatch.justwatch', apkLink: 'https://apkpure.com/p/com.justwatch.justwatch' },
+                        { id: 'app-11', title: 'Splitwise', shortDesc: 'أفضل تطبيق لتقسيم الفواتير والمصاريف مع الأصدقاء، لإنهاء الحسابات المعقدة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976493/Picsart_25-06-27_01-21-07-942_iwqrdh.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.Splitwise.SplitwiseMobile', apkLink: 'https://splitwise.ar.uptodown.com/android' },
+                        { id: 'app-12', title: 'Radio Garden', shortDesc: 'استمع إلى محطات الراديو من أي مدينة في العالم مباشرة عبر تدوير كرة أرضية تفاعلية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976493/Picsart_25-06-27_01-20-41-206_vhxskl.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.jonathanpuckey.radiogarden', apkLink: 'https://apkpure.com/p/com.jonathanpuckey.radiogarden' },
+                        { id: 'app-13', title: 'IFTTT', shortDesc: 'اجعل تطبيقاتك وأجهزتك تعمل معاً تلقائياً. يربط بين خدماتك الرقمية لتوفير الوقت والجهد.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974235/Picsart_25-06-24_15-20-07-412_mfqtha.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.ifttt.ifttt', apkLink: 'https://apkpure.com/p/com.ifttt.ifttt' },
+                        { id: 'app-14', title: 'Photomath', shortDesc: 'موجّهك الشخصي للرياضيات. صوّر أي مسألة رياضية ليقوم بحلها وشرح الخطوات بالتفصيل.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974236/Picsart_25-06-24_15-21-26-336_icw7gz.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.microblink.photomath', apkLink: 'https://apkpure.com/p/com.microblink.photomath' },
+                        { id: 'app-15', title: 'Pocket', shortDesc: 'احفظ المقالات والفيديوهات من أي مكان على الإنترنت لقراءتها ومشاهدتها لاحقاً، حتى بدون اتصال.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974199/Picsart_25-06-24_15-24-40-294_ayeaey.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.ideashower.readitlater.pro', apkLink: 'https://apkpure.com/p/com.ideashower.readitlater.pro' },
+                        { id: 'app-16', title: 'AllTrails', shortDesc: 'دليلك الشامل لاستكشاف الطبيعة، يوفر خرائط لملايين المسارات للمشي والجري وركوب الدراجات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974224/Picsart_25-06-24_15-26-42-633_fo8f8x.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.alltrails.alltrails', apkLink: 'https://www.apkmirror.com/apk/alltrails-llc-android/alltrails-hike-bike-run/alltrails-hike-bike-run-25-6-40-release/alltrails-hike-bike-run-25-6-40-android-apk-download/' },
+                        { id: 'app-17', title: 'Yuka', shortDesc: 'امسح باركود المنتجات الغذائية والتجميلية لتعرف فوراً مكوناتها وتأثيرها على صحتك.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974205/Picsart_25-06-24_15-28-30-061_yxvsez.jpg', externalLink: 'https://play.google.com/store/apps/details?id=io.yuka.android', apkLink: 'https://apkpure.com/p/io.yuka.android' },
+                        { id: 'app-18', title: 'Sleep Cycle', shortDesc: 'منبه ذكي يحلل نومك ويوقظك في أخف مرحلة منه، لتستيقظ وأنت تشعر بالانتعاش.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974210/Picsart_25-06-24_15-29-55-177_ksw2zv.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.northcube.sleepcycle', apkLink: 'https://northcube-sleepcycle.ar.uptodown.com/android' },
+                        { id: 'app-19', title: 'MacroDroid', shortDesc: 'لأتمتة المهام على أندرويد بسهولة، حيث يقوم بتنفيذ إجراءات معينة عند تحقق شروط محددة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974235/Picsart_25-06-24_15-31-50-515_hgncg0.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.arlosoft.macrodroid', apkLink: 'https://apkpure.com/p/com.arlosoft.macrodroid' },
+                        { id: 'app-20', title: 'Fing', shortDesc: 'أداة أساسية لأمان شبكتك. اكشف من يستخدم شبكة الواي فاي الخاصة بك وحسّن أداء الإنترنت.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750974246/Picsart_25-06-24_15-33-22-520_uo0twy.jpg', externalLink: 'https://play.google.com/store/apps/details?id=com.overlook.android.fing', apkLink: 'https://apkpure.com/p/com.overlook.android.fing' }
+                    ] 
+                },
+                { 
+                    id: 'useful-websites', 
+                    title: 'مواقع مفيدة', 
+                    viewType: 'modal', 
+                    linkText: 'رابط الموقع', 
+                    items: [
+                        { id: 'web-1', title: 'Remove.bg', shortDesc: 'يزيل خلفية أي صورة بضغطة زر واحدة وبدقة مذهلة، موفراً عليك ساعات من العمل على فوتوشوب.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976699/Picsart_25-06-24_15-38-15-925_ibfxz4.jpg', externalLink: 'https://www.remove.bg' },
+                        { id: 'web-2', title: 'Photopea', shortDesc: 'محرر صور متكامل وقوي يعمل مباشرة من المتصفح، وهو بديل مجاني وممتاز لبرنامج فوتوشوب.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976700/Picsart_25-06-24_15-39-54-897_rpuzyg.jpg', externalLink: 'https://www.photopea.com' },
+                        { id: 'web-3', title: 'Temp Mail', shortDesc: 'يوفر لك بريداً إلكترونياً مؤقتاً لاستخدامه في التسجيل بالمواقع غير الموثوقة وحماية بريدك الأساسي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976709/Picsart_25-06-24_15-41-37-756_iv7wbk.jpg', externalLink: 'https://temp-mail.org/' },
+                        { id: 'web-4', title: 'Pexels', shortDesc: 'مكتبة ضخمة من الصور ومقاطع الفيديو عالية الجودة والمجانية تماماً للاستخدام الشخصي والتجاري.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976710/Picsart_25-06-24_15-44-59-947_jquukf.jpg', externalLink: 'https://www.pexels.com/ar-eg/' },
+                        { id: 'web-5', title: 'Glowbe', shortDesc: 'استكشف كيف كان شكل الأرض في أي حقبة زمنية، من عصر الديناصورات حتى الآن، بشكل تفاعلي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750978152/Picsart_25-06-27_01-48-02-647_ef3l0r.jpg', externalLink: 'https://dinosaurpictures.org/ancient-earth' },
+                        { id: 'web-6', title: 'GetHuman', shortDesc: 'يوفر لك أرقام هواتف خدمة العملاء للشركات الكبرى وأفضل الطرق لتجاوز الرد الآلي والتحدث لموظف حقيقي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976710/Picsart_25-06-24_15-51-05-286_imbupm.jpg', externalLink: 'https://gethuman.com' },
+                        { id: 'web-7', title: 'Privnote', shortDesc: 'أرسل ملاحظات ورسائل سرية تُدمر ذاتياً مباشرة بعد قراءتها، لضمان أقصى درجات الخصوصية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976703/Picsart_25-06-24_15-52-26-103_dkrysr.jpg', externalLink: 'https://privnote.com' },
+                        { id: 'web-8', title: '10MinuteMail', shortDesc: 'شبيه Temp Mail، ينشئ لك بريداً إلكترونياً صالحاً لمدة 10 دقائق فقط، مثالي للتسجيل السريع.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976721/Picsart_25-06-24_15-54-29-192_lnf2ee.jpg', externalLink: 'https://10minutemail.com' },
+                        { id: 'web-9', title: 'Wayback Machine', shortDesc: 'آلة زمن للإنترنت. شاهد كيف كانت تبدو المواقع المفضلة لديك في الماضي عبر أرشيف ضخم لصفحات الويب.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750978153/Picsart_25-06-24_15-59-30-444_joud5n.jpg', externalLink: 'https://archive.org/web/' },
+                        { id: 'web-10', title: 'WolframAlpha', shortDesc: 'محرك معرفة حسابي يجيب على أسئلتك في الرياضيات والعلوم والبيانات، ويقوم بحل المسائل المعقدة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976751/Picsart_25-06-24_16-01-51-973_pemcsp.jpg', externalLink: 'https://www.wolframalpha.com' },
+                        { id: 'web-11', title: 'Vectorizer.AI', shortDesc: 'يحول أي صورة عادية (JPG, PNG) إلى رسوم متجهات (فيكتور SVG) عالية الدقة يمكن تكبيرها بلا حدود.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976716/Picsart_25-06-24_16-02-45-513_fkktc0.jpg', externalLink: 'https://vectorizer.ai/' },
+                        { id: 'web-12', title: 'CityWalks', shortDesc: 'تجول افتراضياً في شوارع مدن العالم واستمع إلى أصواتها الحقيقية، لتشعر وكأنك هناك بالفعل.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976721/Picsart_25-06-24_16-04-09-789_qpcbhb.jpg', externalLink: 'https://citywalks.live/' },
+                        { id: 'web-13', title: 'AlternativeTo', shortDesc: 'هل تبحث عن بديل لبرنامج معين؟ هذا الموقع يقترح لك أفضل البدائل المجانية والمدفوعة لأي برنامج أو تطبيق.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976716/Picsart_25-06-24_16-07-47-973_omhgrq.jpg', externalLink: 'https://alternativeto.net/' },
+                        { id: 'web-14', title: 'My 90s TV', shortDesc: 'محاكاة لتلفزيون من حقبة التسعينيات. تنقل بين القنوات وشاهد البرامج والأفلام والإعلانات الحقيقية من تلك الفترة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976726/Picsart_25-06-24_16-12-03-647_ih4ufq.jpg', externalLink: 'https://www.my90stv.com/' },
+                        { id: 'web-15', title: 'ManualsLib', shortDesc: 'مكتبة ضخمة تحتوي على كتيبات الإرشادات (Manuals) لملايين المنتجات والأجهزة الإلكترونية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976730/Picsart_25-06-24_16-16-53-993_q3yga8.jpg', externalLink: 'https://www.manualslib.com/' },
+                        { id: 'web-16', title: 'Print Friendly', shortDesc: 'يجعل أي صفحة ويب سهلة الطباعة ويوفر الحبر والورق عبر إزالة الإعلانات والعناصر غير المرغوبة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976768/Picsart_25-06-24_16-18-01-539_phqbmy.jpg', externalLink: 'https://www.printfriendly.com/' },
+                        { id: 'web-17', title: 'FutureMe', shortDesc: 'اكتب رسالة لنفسك في المستقبل. حدد تاريخاً بعد سنة أو 5 أو 10 سنوات، وستصلك رسالتك عبر البريد الإلكتروني.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976727/Picsart_25-06-24_16-19-08-306_x1u5g4.jpg', externalLink: 'https://www.futureme.org/' },
+                        { id: 'web-18', title: 'WeTransfer', shortDesc: 'أبسط طريقة لإرسال الملفات الكبيرة (حتى 2 جيجابايت مجاناً) إلى أي شخص عبر البريد الإلكتروني دون الحاجة للتسجيل.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976752/Picsart_25-06-24_16-21-07-920_lskgb2.jpg', externalLink: 'https://wetransfer.com/' },
+                        { id: 'web-19', title: 'This Person Does Not Exist', shortDesc: 'في كل مرة تزور فيها هذا الموقع، يقوم الذكاء الاصطناعي بإنشاء وجه بشري واقعي تماماً لشخص غير موجود.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976751/Picsart_25-06-24_16-24-03-077_jvjzyq.jpg', externalLink: 'https://this-person-does-not-exist.com/en' },
+                        { id: 'web-20', title: 'SlidesCarnival', shortDesc: 'يوفر قوالب عروض تقديمية احترافية ومجانية لبرنامج PowerPoint و Google Slides.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976733/Picsart_25-06-24_16-25-22-763_geiiub.jpg', externalLink: 'https://www.slidescarnival.com/' }
+                    ]
+                },
+                { 
+                    id: 'useful-channels', 
+                    title: 'قنوات مفيدة', 
+                    viewType: 'modal', 
+                    linkText: 'رابط القناة', 
+                    items: [
+                        { id: 'chan-1', title: 'The School of Life', shortDesc: 'كنز من الحكمة العاطفية والفلسفة التطبيقية. تساعدك على فهم نفسك وعلاقاتك من خلال منظور فلسفي هادئ وعميق.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976739/Picsart_25-06-24_17-58-17-039_bxpirv.jpg', externalLink: 'https://youtube.com/@theschooloflifetv' },
+                        { id: 'chan-2', title: 'Lex Fridman', shortDesc: 'حوارات طويلة وعميقة مع أعظم العقول في العالم (علماء، فلاسفة، ومفكرون) في حوارات هادئة وصادقة تصل إلى جوهر الأفكار.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976738/Picsart_25-06-24_18-01-22-988_mqalf1.jpg', externalLink: 'https://youtube.com/@lexfridman' },
+                        { id: 'chan-3', title: 'Einzelgänger', shortDesc: 'رحلة هادئة في أعماق الفلسفة الرواقية والوجودية، تقدم لك أدوات عقلية للتعامل مع تحديات الحياة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976743/Picsart_25-06-24_18-03-23-460_s0jwh5.jpg', externalLink: 'https://youtube.com/@einzelganger' },
+                        { id: 'chan-4', title: 'Freedom in Thought', shortDesc: 'تحليل فلسفي عميق لأفكار الفلاسفة الأكثر تأثيراً مثل دوستويفسكي وكارل يونغ وشوبنهاور.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976755/Picsart_25-06-24_18-05-59-241_oh86kp.jpg', externalLink: 'https://youtube.com/@freedominthought' },
+                        { id: 'chan-5', title: 'Veritasium', shortDesc: 'استكشاف للعلم يتجاوز السطحيات، حيث يخوض في تاريخ الأفكار ويجري تجارب مذهلة ليكشف لك عن جوهر المفاهيم العلمية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976780/Picsart_25-06-24_18-07-59-543_nycbz7.jpg', externalLink: 'https://youtube.com/@veritasium' },
+                        { id: 'chan-6', title: '3Blue1Brown', shortDesc: 'لا تعلمك هذه القناة كيف تحل المعادلات، بل تجعلك "ترى" جمال الرياضيات وتفهمها بشكل بديهي من خلال رسوم متحركة عبقرية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976758/Picsart_25-06-24_18-10-32-312_gue8lh.jpg', externalLink: 'https://youtube.com/@3blue1brown' },
+                        { id: 'chan-7', title: 'Huberman Lab', shortDesc: 'عالم الأعصاب أندرو هيوبرمان يقدم بروتوكولات علمية دقيقة لتحسين نومك، تركيزك، وصحتك يمكنك تطبيقها مباشرة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976778/Picsart_25-06-24_18-13-02-807_ozojod.jpg', externalLink: 'https://youtube.com/@hubermanlab' },
+                        { id: 'chan-8', title: 'SmarterEveryDay', shortDesc: 'المهندس ديستن ساندلن يستكشف العالم من حوله بالفيزياء والهندسة، ويشاركك متعة الاكتشاف وفهم كيف تعمل الأشياء.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976766/Picsart_25-06-24_18-15-33-110_wlk9ne.jpg', externalLink: 'https://youtube.com/@smartereveryday' },
+                        { id: 'chan-9', title: 'Practical Engineering', shortDesc: 'تجعلك تفهم العالم الهندسي الذي نعيش فيه، وكيف تعمل البنية التحتية (الجسور، السدود، شبكات الكهرباء) التي نعتمد عليها.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976766/Picsart_25-06-24_18-17-38-050_bhpciv.jpg', externalLink: 'https://youtube.com/@practicalengineeringchannel' },
+                        { id: 'chan-10', title: 'Fall of Civilizations', shortDesc: 'وثائقيات طويلة ومتقنة تحكي قصص صعود وسقوط الحضارات، مع التركيز على الدروس والعبر العميقة التي نتعلمها اليوم.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976768/Picsart_25-06-24_18-21-01-081_k2k0qy.jpg', externalLink: 'https://youtube.com/@fallofcivilizations' },
+                        { id: 'chan-11', title: 'Acquired', shortDesc: 'تحليل استراتيجي عميق لقصص نجاح أكبر الشركات في العالم. هي بمثابة درجة ماجستير في إدارة الأعمال لفهم عالم التكنولوجيا.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976778/Picsart_25-06-24_18-23-15-463_flaabz.jpg', externalLink: 'https://youtube.com/@acquiredfm' },
+                        { id: 'chan-12', title: 'Wendover Productions', shortDesc: 'وثائقيات تشرح أنظمة العالم المعقدة (الطيران، الخدمات اللوجستية، الجغرافيا السياسية) بوضوح وتفصيل مذهلين.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976779/Picsart_25-06-24_18-59-45-816_swxyob.jpg', externalLink: 'https://youtube.com/@wendoverproductions' },
+                        { id: 'chan-13', title: 'Historia Civilis', shortDesc: 'برسوم بسيطة، تشرح القناة الحملات العسكرية والتحركات السياسية المعقدة في روما القديمة واليونان بدقة ووضوح لا مثيل لهما.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976781/Picsart_25-06-24_19-47-54-859_vjt0zm.jpg', externalLink: 'https://youtube.com/@historiacivilis' },
+                        { id: 'chan-14', title: 'Nerdwriter1', shortDesc: 'مقالات فيديو عميقة تحلل الفن، السينما، والموسيقى، وتكشف عن الطبقات الخفية والإبداع في الأعمال الشهيرة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976791/Picsart_25-06-24_19-49-52-161_jtfxa2.jpg', externalLink: 'https://youtube.com/@nerdwriter1' },
+                        { id: 'chan-15', title: 'Lessons from the Screenplay', shortDesc: 'تحلل سيناريوهات الأفلام العظيمة لتكشف عن أسرار كتابة القصص القوية والمؤثرة، وكيف يتم بناؤها على الورق.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976792/Picsart_25-06-24_19-51-52-721_t0mtu3.jpg', externalLink: 'https://youtube.com/@lessonsfromthescreenplay' },
+                        { id: 'chan-16', title: 'Sebastian Lague', shortDesc: 'استكشاف لجمال علوم الحاسوب والخوارزميات. يقوم ببرمجة وتصوير مفاهيم معقدة (كالشبكات العصبية) بطريقة فنية مذهلة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976795/Picsart_25-06-24_19-53-46-130_skmxlv.jpg', externalLink: 'https://youtube.com/@sebastianlague' },
+                        { id: 'chan-17', title: 'Ali Abdaal', shortDesc: 'استراتيجيات وتقنيات علمية لزيادة الإنتاجية، التعلم بفعالية، وبناء حياة ذات معنى وهدف.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976790/Picsart_25-06-24_19-55-30-771_einm9x.jpg', externalLink: 'https://youtube.com/@aliabdaal' },
+                        { id: 'chan-18', title: 'ColdFusion', shortDesc: 'وثائقيات تستكشف "كيف ولماذا" نجحت أو فشلت بعض أكبر الشركات والابتكارات التقنية في التاريخ، مع التركيز على قصص الابتكار.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976803/Picsart_25-06-24_19-56-47-154_rvaioq.jpg', externalLink: 'https://youtube.com/@coldfusion' },
+                        { id: 'chan-19', title: 'Big Think', shortDesc: 'مقابلات قصيرة ومكثفة مع أكبر الخبراء والمفكرين، يقدمون فيها أهم أفكارهم التي يمكن أن تغير طريقة تفكيرك.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976801/Picsart_25-06-24_19-58-34-910_gwnfu3.jpg', externalLink: 'https://youtube.com/@bigthink' },
+                        { id: 'chan-20', title: 'The B1M', shortDesc: 'القناة الأولى للمشاريع العملاقة والهندسة المعمارية. تقدم وثائقيات متقنة عن أضخم مشاريع البناء والابتكارات الهندسية في العالم.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750976795/Picsart_25-06-24_19-59-54-008_foheom.jpg', externalLink: 'https://youtube.com/@theb1m' }
+                    ]
+                },
+                { 
+                    id: 'ai-tools', 
+                    title: 'أدوات الذكاء الاصطناعي', 
+                    viewType: 'modal', 
+                    linkText: 'رابط الأداة',
+                    items: [
+                         { id: 'ai-1', title: 'ChatGPT', shortDesc: 'مساعد ذكاء اصطناعي شامل للمساعدة في الكتابة، تلخيص النصوص، الإجابة على الأسئلة، وصياغة الأفكار.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980644/Picsart_25-06-24_20-45-11-958_rmksur.jpg', externalLink: 'https://chat.openai.com' },
+                         { id: 'ai-2', title: 'DeepAI', shortDesc: 'أداة متكاملة توفر محادثات ذكية، إنشاء صور احترافية، تصميم مقاطع فيديو، وتأليف مقاطع موسيقية فريدة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980617/Picsart_25-06-24_20-45-29-221_cxsocx.jpg', externalLink: 'https://deepai.org' },
+                         { id: 'ai-3', title: 'Leonardo.ai', shortDesc: 'إنشاء صور فنية وتصميمات احترافية بسهولة ودقة عالية باستخدام الذكاء الاصطناعي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980620/Picsart_25-06-24_20-46-18-327_xdcqyz.jpg', externalLink: 'https://leonardo.ai' },
+                         { id: 'ai-4', title: 'Craiyon', shortDesc: 'موقع مجاني بالكامل لتوليد الصور والتصميمات الفنية من خلال وصف نصي بسيط، لا يحتاج لتسجيل.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980627/Picsart_25-06-24_20-46-37-239_ixajb4.jpg', externalLink: 'http://craiyon.com' },
+                         { id: 'ai-5', title: 'Enhanceor.ai', shortDesc: 'تحسين جودة صور الوجوه لجعلها تبدو طبيعية وواقعية بتفاصيل مذهلة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980624/Picsart_25-06-24_20-47-00-572_hftb02.jpg', externalLink: 'https://enhanceor.ai' },
+                         { id: 'ai-6', title: 'PicWish', shortDesc: 'تعديل الصور بسهولة، مثل إزالة الخلفيات وغيرها من التعديلات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980658/Picsart_25-06-24_20-47-17-422_uic6yw.jpg', externalLink: 'https://picwish.com' },
+                         { id: 'ai-7', title: 'Krea.ai', shortDesc: 'يساعد في تصميم الشعارات (اللوجوهات) بسهولة وسرعة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980633/Picsart_25-06-24_20-47-38-956_ayacek.jpg', externalLink: 'http://krea.ai' },
+                         { id: 'ai-8', title: 'Type Studio', shortDesc: 'أداة مميزة لتعديل وترجمة مقاطع الفيديو وإضافة عناوين احترافية بسهولة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980647/Picsart_25-06-24_20-48-20-550_ah3hla.jpg', externalLink: 'https://www.typestudio.co' },
+                         { id: 'ai-9', title: 'HeyGen', shortDesc: 'لتوليد فيديوهات احترافية متعددة اللغات بجودة عالية، مع مزامنة حركة الشفاه.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980647/Picsart_25-06-24_20-48-38-105_cmyub4.jpg', externalLink: 'https://www.heygen.com' },
+                         { id: 'ai-10', title: 'Synthesia', shortDesc: 'الأداة الأقوى في مجال إنشاء فيديوهات للتدريب المؤسسي والتعليم باستخدام شخصيات رمزية (Avatars).', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980659/Picsart_25-06-24_20-48-59-715_qlwxpj.jpg', externalLink: 'https://www.synthesia.io' },
+                         { id: 'ai-11', title: 'VEED.IO', shortDesc: 'منصة متكاملة تجمع بين تحرير الفيديو القوي وتوليد المحتوى الذكي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980660/Picsart_25-06-24_20-49-19-053_r78r7k.jpg', externalLink: 'https://www.veed.io' },
+                         { id: 'ai-12', title: 'D-ID', shortDesc: 'أداة ابتكارية لتحريك الصور الثابتة (Portraits) ودمج الأصوات معها لإنشاء فيديوهات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980661/Picsart_25-06-24_20-49-41-874_qzs2b8.jpg', externalLink: 'https://www.d-id.com' },
+                         { id: 'ai-13', title: 'RunwayML', shortDesc: 'مجموعة أدوات قوية لمونتاج وتحرير الفيديو بشكل احترافي وسهل.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980668/Picsart_25-06-24_20-50-10-106_lef6av.jpg', externalLink: 'http://runway.ml' },
+                         { id: 'ai-14', title: 'Pika.art', shortDesc: 'تحويل الأفكار المكتوبة إلى مقاطع فيديو إبداعية بشكل تلقائي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980677/Picsart_25-06-24_20-50-35-707_edbxuh.jpg', externalLink: 'http://pika.art' },
+                         { id: 'ai-15', title: 'ElevenLabs', shortDesc: 'استنساخ صوتك أو إنشاء أصوات جديدة بشكل واقعي جداً لاستخدامها في التعليق الصوتي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980680/Picsart_25-06-24_20-51-02-113_bhmuh0.jpg', externalLink: 'http://elevenlabs.io' },
+                         { id: 'ai-16', title: 'Descript', shortDesc: 'تحرير الصوت والفيديو بسهولة وكأنه مستند نصي، مع ميزات قوية للبودكاست.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980682/Picsart_25-06-24_20-51-19-606_upzgam.jpg', externalLink: 'http://descript.com' },
+                         { id: 'ai-17', title: 'Fliki.ai', shortDesc: 'تحويل النصوص إلى فيديوهات مع تعليق صوتي طبيعي ومجموعة واسعة من الأصوات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980685/Picsart_25-06-24_20-51-36-260_pienwb.jpg', externalLink: 'http://fliki.ai' },
+                         { id: 'ai-18', title: 'RecCloud', shortDesc: 'تحويل الصوت إلى نص بشكل فوري، مناسب لتفريغ التسجيلات الصوتية والمحاضرات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980679/Picsart_25-06-24_20-51-57-935_grj4jg.jpg', externalLink: 'http://reccloud.com' },
+                         { id: 'ai-19', title: 'Suno.ai', shortDesc: 'يمكنك من صنع موسيقاك الخاصة بالذكاء الاصطناعي عبر كتابة الوصف أو كلمات الأغنية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980685/Picsart_25-06-24_20-52-16-558_ckt2de.jpg', externalLink: 'http://suno.ai' },
+                         { id: 'ai-20', title: 'Anam.ai', shortDesc: 'أداة متخصصة في إنشاء المحتوى القصير والفيديوهات لوسائل التواصل الاجتماعي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980700/Picsart_25-06-24_20-52-33-647_r5lqvx.jpg', externalLink: 'https://anam.ai' },
+                         { id: 'ai-21', title: 'Bookwiz.io', shortDesc: 'يساعد في تأليف القصص والنصوص الطويلة وتحويل الأفكار إلى كتب متكاملة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980687/Picsart_25-06-24_20-52-49-701_soxlc7.jpg', externalLink: 'https://bookwiz.io' },
+                         { id: 'ai-22', title: 'Perplexity.ai', shortDesc: 'محرك بحث ذكي وسريع يجيب على أسئلتك مباشرة مع ذكر المصادر التي اعتمد عليها.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980699/Picsart_25-06-24_20-53-33-481_ovymyg.jpg', externalLink: 'https://www.perplexity.ai' },
+                         { id: 'ai-23', title: 'Felo.ai', shortDesc: 'محرك بحث متعدد اللغات مع أدوات ذكية مدمجة مثل تلخيص المقالات وصفحات الويب.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980700/Picsart_25-06-24_20-53-56-397_qbolxg.jpg', externalLink: 'https://felo.ai' },
+                         { id: 'ai-24', title: 'Elicit.org', shortDesc: 'مساعد باحث آلي يساعد في العثور على الأوراق البحثية ذات الصلة وتلخيصها.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980699/Picsart_25-06-24_20-54-20-066_nqde7h.jpg', externalLink: 'https://elicit.org' },
+                         { id: 'ai-25', title: 'Scite.ai', shortDesc: 'أداة للبحث العلمي وتحليل الاستشهادات لمعرفة كيف تم دعم أو معارضة ورقة بحثية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980699/Picsart_25-06-24_20-54-36-683_yg3zrx.jpg', externalLink: 'https://scite.ai' },
+                         { id: 'ai-26', title: 'Google Scholar', shortDesc: 'محرك البحث الأكاديمي من جوجل للوصول إلى الأبحاث والمصادر الموثوقة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980702/Picsart_25-06-24_20-55-35-375_yidf00.jpg', externalLink: 'https://scholar.google.com' },
+                         { id: 'ai-27', title: 'ResearchGate', shortDesc: 'شبكة تواصل للباحثين والأكاديميين لمشاركة الأبحاث والتعاون.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980711/Picsart_25-06-24_20-55-58-848_wycbhl.jpg', externalLink: 'https://www.researchgate.net' },
+                         { id: 'ai-28', title: 'Connected Papers', shortDesc: 'استكشاف الأبحاث المرتبطة بموضوع معين بطريقة بصرية لفهم المجال البحثي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980711/Picsart_25-06-24_20-56-55-460_k8bliz.jpg', externalLink: 'https://www.connectedpapers.com' },
+                         { id: 'ai-29', title: 'Turnitin', shortDesc: 'برنامج لفحص الانتحال والسرقة الأدبية، يستخدم بشكل واسع في الجامعات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980711/Picsart_25-06-24_20-57-09-678_o4hqt7.jpg', externalLink: 'https://www.turnitin.com' },
+                         { id: 'ai-30', title: 'Overleaf', shortDesc: 'محرر نصوص تعاوني عبر الإنترنت لتنسيق البحوث والرسائل باستخدام لغة LaTeX.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980722/Picsart_25-06-24_20-57-24-933_jr6gof.jpg', externalLink: 'https://www.overleaf.com' },
+                         { id: 'ai-31', title: 'Zotero', shortDesc: 'أداة مجانية لإدارة وتنظيم المراجع الأكاديمية وإنشاء قائمة المصادر تلقائياً.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980726/Picsart_25-06-24_20-57-40-042_vuqtr2.jpg', externalLink: 'https://www.zotero.org' },
+                         { id: 'ai-32', title: 'Mendeley', shortDesc: 'مرجع قوي لترتيب الأبحاث والمراجع وإدارة المكتبة البحثية الخاصة بك.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980714/Picsart_25-06-24_20-58-00-258_ydsrzq.jpg', externalLink: 'https://www.mendeley.com' },
+                         { id: 'ai-33', title: 'Stitch by Google', shortDesc: 'أداة جديدة من جوجل لتصميم واجهات المواقع والتطبيقات بسهولة عبر وصف نصي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980725/Picsart_25-06-24_20-58-22-955_dpzvv9.jpg', externalLink: 'https://stitch.withgoogle.com' },
+                         { id: 'ai-34', title: 'WordPress AI Builder', shortDesc: 'أداة لإنشاء مواقع ويب مدعومة بالذكاء الاصطناعي على منصة WordPress.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980736/Picsart_25-06-24_20-59-23-847_eeaa7u.jpg', externalLink: 'https://wordpress.com/ar/ai-website-builder/' },
+                         { id: 'ai-35', title: 'Relume.io', shortDesc: 'يساعد في تصميم وبناء خرائط المواقع والواجهات الأولية بشكل عصري وسريع.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980742/Picsart_25-06-24_20-59-39-182_c8hbwg.jpg', externalLink: 'http://relume.io' },
+                         { id: 'ai-36', title: 'Rork', shortDesc: 'منصة "No Code" تحول النص إلى تطبيق جوال وويب في دقائق.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980731/Picsart_25-06-24_20-59-59-530_cz04si.jpg', externalLink: 'https://rork.com' },
+                         { id: 'ai-37', title: 'Gamma.app', shortDesc: 'إنشاء عروض تقديمية ومستندات جذابة وتفاعلية بسرعة وسهولة من خلال وصف بسيط.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980751/Picsart_25-06-24_21-00-52-543_dwmjtr.jpg', externalLink: 'https://gamma.app' },
+                         { id: 'ai-38', title: 'Tome.app', shortDesc: 'أداة لإنشاء عروض تقديمية وقصص مرئية سريعة وجذابة باستخدام الذكاء الاصطناعي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980750/Picsart_25-06-24_21-01-14-766_jqgulc.jpg', externalLink: 'https://tome.app' },
+                         { id: 'ai-39', title: 'Monica', shortDesc: 'أداة متخصصة في صناعة الخرائط الذهنية، تحول النصوص والفيديو إلى خرائط ذهنية.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980752/Picsart_25-06-24_21-01-34-788_cmxlwf.jpg', externalLink: 'https://monica.im' },
+                         { id: 'ai-40', title: 'lilys.ai', shortDesc: 'أداة كورية مميزة في تلخيص مختلف أنواع المحتوى (فيديو، صوت، PDF, Word).', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980771/Picsart_25-06-24_21-02-00-487_pii9ps.jpg', externalLink: 'https://lilys.ai' },
+                         { id: 'ai-41', title: 'Reflect', shortDesc: 'تطبيق ملاحظات ذكي ينظم أفكارك ويتكامل مع أدواتك الأخرى، مع تطبيق لـ iOS.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980756/Picsart_25-06-24_21-02-24-830_kfydzb.jpg', externalLink: 'https://reflect.app' },
+                         { id: 'ai-42', title: 'Brisk Teaching', shortDesc: 'مساعد تعليمي للمعلمين يساعد في إنشاء المواد التعليمية والتقييمات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980762/Picsart_25-06-24_21-02-43-730_xf3jg3.jpg', externalLink: 'https://www.briskteaching.com' },
+                         { id: 'ai-43', title: 'Chemix', shortDesc: 'مختبر كيمياء افتراضي لرسم الأدوات المخبرية وإجراء التجارب بشكل تفاعلي.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1751009130/Picsart_25-06-24_21-02-57-459_tdajrg.jpg', externalLink: 'https://chemix.org' },
+                         { id: 'ai-44', title: 'Thaka.io', shortDesc: 'أكبر دليل عربي مجاني لتطبيقات ومواقع الذكاء الاصطناعي، مصنفة ومترجمة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980773/Picsart_25-06-24_21-03-11-733_aowyaf.jpg', externalLink: 'https://thaka.io' },
+                         { id: 'ai-45', title: 'ChatPDF', shortDesc: 'يسمح لك بالتحاور مع ملفات PDF وطرح أسئلة حول محتواها والحصول على ملخصات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1751009130/Picsart_25-06-24_21-03-29-077_km0jvq.jpg', externalLink: 'https://www.chatpdf.com' },
+                         { id: 'ai-46', title: 'Smallpdf', shortDesc: 'مجموعة أدوات شاملة عبر الإنترنت لضغط، تحويل، دمج، وتقسيم ملفات PDF.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750980771/Picsart_25-06-24_21-03-44-853_wipryr.jpg', externalLink: 'https://smallpdf.com' },
+                         { id: 'ai-47', title: 'iLovePDF', shortDesc: 'أداة شائعة ومجانية توفر كل ما تحتاجه للتعامل مع ملفات PDF بسهولة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1751009129/Picsart_25-06-24_21-04-11-724_tzypwk.jpg', externalLink: 'https://www.ilovepdf.com' },
+                         { id: 'ai-48', title: 'PDFgear', shortDesc: 'محرر PDF مجاني مع ميزات مدعومة بالذكاء الاصطناعي للتحرير والتحويل.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1751009128/Picsart_25-06-24_21-04-35-678_kz48h2.jpg', externalLink: 'https://www.pdfgear.com' },
+                         { id: 'ai-49', title: 'Science.gov', shortDesc: 'بوابة حكومية أمريكية تحتوي على أكثر من 200 مليون ورقة علمية موثوقة.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750982637/Picsart_25-06-24_21-04-50-237_vpjopf.jpg', externalLink: 'https://www.science.gov' },
+                         { id: 'ai-50', title: 'Springer Nature', shortDesc: 'مصدر علمي ضخم يحتوي على ملايين المقالات والكتب والأبحاث والمؤتمرات.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750982636/Picsart_25-06-24_21-05-16-214_zfyqza.jpg', externalLink: 'https://www.springernature.com/gp' }
+                    ]
+                },
+                { 
+                    id: 'useful-projects', 
+                    title: 'مشاريع مفيدة', 
+                    viewType: 'full-page', 
+                    items: [
+                        { 
+                            id: 'proj-1', 
+                            title: 'خدمة غسيل السيارات المتنقل', 
+                            shortDesc: 'الذهاب إلى منزل العميل أو مكان عمله لغسل وتنظيف سيارته.', 
+                            imgSrc: 'https://images.pexels.com/photos/8660006/pexels-photo-8660006.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> الذهاب إلى منزل العميل أو مكان عمله لغسل وتنظيف سيارته.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> يوفر راحة لا تقدر بثمن للعميل. تكاليف بدئه منخفضة جداً ولا تحتاج إلى إيجار محل.</p>
+                                <p><strong>متطلبات البدء:</strong> مضخة مياه محمولة، مواد تنظيف جيدة، وسيلة نقل للمعدات.</p>
+                                <p><strong>نصيحة ذهبية:</strong> الاهتمام بالتفاصيل (مثل تلميع الإطارات وتنظيف حواف الأبواب) هو ما سيبني لك سمعة ممتازة.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-2', 
+                            title: 'تركيب وصيانة فلاتر المياه المنزلية', 
+                            shortDesc: 'تركيب فلاتر المياه الجديدة للمنازل، مع تقديم خدمة صيانة دورية لتغيير الشمعات.', 
+                            imgSrc: 'https://images.pexels.com/photos/6419128/pexels-photo-6419128.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تركيب فلاتر المياه الجديدة للمنازل، مع تقديم خدمة صيانة دورية لتغيير الشمعات.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> حاجة أساسية في كل بيت تقريباً. يضمن لك دخلاً مستمراً من خلال عقود الصيانة.</p>
+                                <p><strong>متطلبات البدء:</strong> عدة عمل بسيطة، معرفة جيدة بأنواع الفلاتر، وعلاقة مع تاجر جملة لشرائها بسعر جيد.</p>
+                                <p><strong>نصيحة ذهبية:</strong> كن دقيقاً جداً في مواعيد الصيانة. رسالة تذكير للعميل بموعد تبديل الفلتر تبني ثقة لا تنتهي.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-3', 
+                            title: 'صيانة وتصليح الهواتف الذكية', 
+                            shortDesc: 'التخصص في إصلاح المشاكل الأكثر شيوعاً: تبديل الشاشات، البطاريات، ومنافذ الشحن.', 
+                            imgSrc: 'https://images.pexels.com/photos/3186295/pexels-photo-3186295.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> التخصص في إصلاح المشاكل الأكثر شيوعاً: تبديل الشاشات، البطاريات، ومنافذ الشحن.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> لا يوجد شخص لا يملك هاتفاً، والأعطال جزء من حياتنا اليومية. يمكن البدء من المنزل.</p>
+                                <p><strong>متطلبات البدء:</strong> عدة صيانة إلكترونيات دقيقة، تعلم أساسيات الإصلاح عبر يوتيوب، مصدر موثوق لقطع الغيار.</p>
+                                <p><strong>نصيحة ذهبية:</strong> كن أميناً. إذا كان العطل بسيطاً، فلا تبالغ في التشخيص. الأمانة هي أفضل تسويق.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-4', 
+                            title: 'خدمات التنظيف المنزلي والمكتبي', 
+                            shortDesc: 'تقديم خدمة تنظيف موثوقة وعالية الجودة للمنازل، أو بعقود للمكاتب والعيادات الصغيرة.', 
+                            imgSrc: 'https://images.pexels.com/photos/6195275/pexels-photo-6195275.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تقديم خدمة تنظيف موثوقة وعالية الجودة للمنازل، أو بعقود للمكاتب والعيادات الصغيرة.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> الطلب مرتفع من العائلات العاملة والشركات الصغيرة. لا يتطلب خبرة معقدة.</p>
+                                <p><strong>متطلبات البدء:</strong> مواد تنظيف فعالة، أمانة ودقة في العمل، القدرة على تنظيم الوقت.</p>
+                                <p><strong>نصيحة ذهبية:</strong> قدم خدمة "تنظيف عميق" مرة كل شهر أو شهرين كخدمة إضافية بسعر أعلى.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-5', 
+                            title: 'الخياطة والتعديلات البسيطة على الملابس', 
+                            shortDesc: 'تقديم خدمات الخياطة الأساسية من المنزل (تقصير، تضييق، تصليح بسيط).', 
+                            imgSrc: 'https://images.pexels.com/photos/19400130/pexels-photo-19400130.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تقديم خدمات الخياطة الأساسية من المنزل (تقصير، تضييق، تصليح بسيط).</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> خدمة ضرورية ومستمرة لا يمكن الاستغناء عنها.</p>
+                                <p><strong>متطلبات البدء:</strong> ماكينة خياطة منزلية، خيوط وإبر، مهارة أساسية في الخياطة.</p>
+                                <p><strong>نصيحة ذهبية:</strong> تعلم كيفية إصلاح السحابات (Zippers)، فهي من أكثر الخدمات طلباً وربحاً.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-6', 
+                            title: 'مطبخ منزلي للأكلات الموصلية', 
+                            shortDesc: 'إعداد أكلات موصلية أصيلة ووجبات يومية وبيعها للموظفين والطلاب.', 
+                            imgSrc: 'https://images.pexels.com/photos/3026802/pexels-photo-3026802.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> إعداد أكلات موصلية أصيلة ووجبات يومية وبيعها للموظفين والطلاب.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> الطلب على الأكل البيتي النظيف لا يتوقف أبداً. يبدأ من مطبخك مباشرة.</p>
+                                <p><strong>متطلبات البدء:</strong> مهارة في الطبخ، مطبخ نظيف، صفحة على فيسبوك أو انستغرام لعرض قائمة الطعام.</p>
+                                <p><strong>نصيحة ذهبية:</strong> قدم "وجبة اليوم" بسعر خاص كل يوم لتشجيع الطلبات اليومية.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-7', 
+                            title: 'إعداد وبيع المجمدات (الكبة والبورك)', 
+                            shortDesc: 'تجهيز كميات من المقبلات المجمدة الجاهزة للطهي وبيعها للأفراد والمناسبات.', 
+                            imgSrc: 'https://images.pexels.com/photos/14062148/pexels-photo-14062148.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تجهيز كميات من المقبلات المجمدة الجاهزة للطهي وبيعها للأفراد والمناسبات.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> حل سريع ومريح جداً لربات البيوت، والطلب عليه يبلغ ذروته في رمضان والعطلات.</p>
+                                <p><strong>متطلبات البدء:</strong> مهارة في اللف، مواد أولية طازجة، تغليف جيد، ومجمدة (فريزر).</p>
+                                <p><strong>نصيحة ذهبية:</strong> اكتب تعليمات الطهي المثالية على كل عبوة. هذه اللمسة الصغيرة تظهر احترافيتك.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-8', 
+                            title: 'الطباعة على الأكواب (المجات) والتيشيرتات', 
+                            shortDesc: 'طباعة صور وتصاميم حسب الطلب على الأكواب والملابس باستخدام مكبس حراري.', 
+                            imgSrc: 'https://images.pexels.com/photos/7005032/pexels-photo-7005032.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> طباعة صور وتصاميم حسب الطلب على الأكواب والملابس باستخدام مكبس حراري.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> مشروع هدايا شخصية مطلوب طوال العام. هامش الربح فيه جيد جداً.</p>
+                                <p><strong>متطلبات البدء:</strong> مكبس حراري، طابعة خاصة، أكواب وتيشيرتات فارغة.</p>
+                                <p><strong>نصيحة ذهبية:</strong> تعاون مع الرسامين والمصممين المحليين لطباعة أعمالهم، فهذا يوفر لك تصاميم فريدة.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-9', 
+                            title: 'بيع اكسسوارات الموبايل', 
+                            shortDesc: 'شراء اكسسوارات الموبايل (شواحن، كفرات، سماعات) بالجملة وبيعها عبر الإنترنت أو من خلال واجهة عرض صغيرة.', 
+                            imgSrc: 'https://images.pexels.com/photos/27836558/pexels-photo-27836558.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> شراء اكسسوارات الموبايل (شواحن، كفرات، سماعات) بالجملة وبيعها عبر الإنترنت أو من خلال واجهة عرض صغيرة.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> منتجات استهلاكية والطلب عليها لا ينتهي. سهلة التخزين والتسويق.</p>
+                                <p><strong>متطلبات البدء:</strong> رأس مال صغير لشراء الدفعة الأولى من البضاعة، معرفة بآخر الموديلات المطلوبة.</p>
+                                <p><strong>نصيحة ذهبية:</strong> ركز على بيع الشواحن والكوابل الأصلية أو عالية الجودة، فالزبائن يبحثون عن حلول دائمة.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-10', 
+                            title: 'بيع النباتات الداخلية والزينة', 
+                            shortDesc: 'إكثار وبيع نباتات الزينة الداخلية في أصص (سندانات) جميلة عبر الإنترنت.', 
+                            imgSrc: 'https://images.pexels.com/photos/793012/pexels-photo-793012.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> إكثار وبيع نباتات الزينة الداخلية في أصص (سندانات) جميلة عبر الإنترنت.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> اتجاه عالمي ومحلي نحو تزيين المنازل بالنباتات. تكلفة الإنتاج منخفضة ويمكن العمل من المنزل.</p>
+                                <p><strong>متطلبات البدء:</strong> معرفة أساسية بالعناية بالنباتات، مكان مشمس في المنزل، صفحة انستغرام جذابة.</p>
+                                <p><strong>نصيحة ذهبية:</strong> قدم خدمة تنسيق النباتات للمكاتب والمحلات الصغيرة كباقة إضافية.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-11', 
+                            title: 'إدارة صفحات التواصل الاجتماعي للمحلات', 
+                            shortDesc: 'إدارة صفحات فيسبوك وانستغرام للمحلات والشركات الصغيرة في منطقتك.', 
+                            imgSrc: 'https://images.pexels.com/photos/267350/pexels-photo-267350.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> إدارة صفحات فيسبوك وانستغرام للمحلات والشركات الصغيرة في منطقتك.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> معظم أصحاب الأعمال لا يملكون الوقت أو الخبرة. يمكنك إدارة عدة حسابات من هاتفك.</p>
+                                <p><strong>متطلبات البدء:</strong> هاتف ذكي بكاميرا جيدة، إلمام بمنصات التواصل الاجتماعي، عين فنية للتصوير.</p>
+                                <p><strong>نصيحة ذهبية:</strong> لا تكتفِ بنشر الصور، بل قم بعمل فيديوهات قصيرة (Reels)، فهي تحقق انتشاراً أكبر بكثير.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-12', 
+                            title: 'تصميم إعلانات بسيطة باستخدام Canva', 
+                            shortDesc: 'استخدام تطبيق Canva لتصميم إعلانات وقوائم طعام وبطاقات عمل للمطاعم والمحلات.', 
+                            imgSrc: 'https://images.pexels.com/photos/326501/pexels-photo-326501.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> استخدام تطبيق Canva لتصميم إعلانات وقوائم طعام وبطاقات عمل للمطاعم والمحلات.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> خدمة سريعة ومطلوبة جداً، وتطبيق Canva سهل التعلم ويحتوي على آلاف القوالب الجاهزة.</p>
+                                <p><strong>متطلبات البدء:</strong> هاتف ذكي أو حاسوب، حساب Canva، وذوق جيد في التصميم.</p>
+                                <p><strong>نصيحة ذهبية:</strong> قم بإنشاء باقات شهرية (مثلاً: 10 تصاميم شهرياً بسعر ثابت) للمحلات.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-13', 
+                            title: 'كتابة السيرة الذاتية (CV)', 
+                            shortDesc: 'مساعدة الباحثين عن عمل والخريجين الجدد في كتابة وتصميم سيرة ذاتية احترافية.', 
+                            imgSrc: 'https://images.pexels.com/photos/5668858/pexels-photo-5668858.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> مساعدة الباحثين عن عمل والخريجين الجدد في كتابة وتصميم سيرة ذاتية احترافية.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> مهارة لا يتقنها الكثيرون، وهي الخطوة الأولى والأهم في الحصول على وظيفة. لا يتطلب أي رأس مال.</p>
+                                <p><strong>متطلبات البدء:</strong> حاسوب، إلمام جيد باللغة العربية والإنكليزية، الاطلاع على نماذج السير الذاتية الحديثة.</p>
+                                <p><strong>نصيحة ذهبية:</strong> قدم للعميل نسختين من السيرة الذاتية: واحدة بصيغة PDF للتقديم، والأخرى بصيغة Word ليسهل عليه تعديلها مستقبلاً.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-14', 
+                            title: 'التصوير الفوتوغرافي للمناسبات الصغيرة', 
+                            shortDesc: 'تصوير حفلات أعياد الميلاد، التخرج، والخطوبة، أو جلسات تصوير بسيطة للمنتجات.', 
+                            imgSrc: 'https://images.pexels.com/photos/31115084/pexels-photo-31115084.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تصوير حفلات أعياد الميلاد، التخرج، والخطوبة، أو جلسات تصوير بسيطة للمنتجات.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> الناس يريدون توثيق لحظاتهم المهمة بجودة أفضل من صور الموبايل العادية.</p>
+                                <p><strong>متطلبات البدء:</strong> كاميرا احترافية (يمكن البدء بمستعملة)، تعلم أساسيات التصوير والإضاءة.</p>
+                                <p><strong>نصيحة ذهبية:</strong> تخصص في نوع واحد في البداية (مثلاً، تصوير الأطفال أو تصوير المنتجات) لتصبح معروفاً فيه.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-15', 
+                            title: 'تفريغ المحاضرات والتسجيلات الصوتية', 
+                            shortDesc: 'تحويل المحاضرات والاجتماعات المسجلة صوتياً إلى نصوص مكتوبة.', 
+                            imgSrc: 'https://images.pexels.com/photos/63703/pexels-photo-63703.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تحويل المحاضرات والاجتماعات المسجلة صوتياً إلى نصوص مكتوبة.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> خدمة مطلوبة جداً من طلاب الجامعات والباحثين. لا تحتاج إلا إلى حاسوب وسرعة في الكتابة.</p>
+                                <p><strong>متطلبات البدء:</strong> سماعات أذن جيدة، سرعة ودقة في الكتابة على الكيبورد.</p>
+                                <p><strong>نصيحة ذهبية:</strong> استخدم برامج تساعد في إبطاء التسجيل الصوتي دون تغيير نبرة الصوت لتسهيل عملية الاستماع والكتابة.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-16', 
+                            title: 'تجميع وتركيب الأثاث (مثل أثاث IKEA)', 
+                            shortDesc: 'تقديم خدمة تركيب الأثاث الذي يأتي مفككاً ويحتاج إلى تجميع.', 
+                            imgSrc: 'https://images.pexels.com/photos/1249611/pexels-photo-1249611.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تقديم خدمة تركيب الأثاث الذي يأتي مفككاً ويحتاج إلى تجميع.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> خدمة توفر الكثير من الوقت والإحباط على العملاء. مربحة جداً وتعتمد على المهارة اليدوية.</p>
+                                <p><strong>متطلبات البدء:</strong> مجموعة أدوات جيدة (خاصة مفك براغي كهربائي)، قدرة على قراءة التعليمات والرسومات.</p>
+                                <p><strong>نصيحة ذهبية:</strong> كن منظماً جداً أثناء العمل ولا تضيع أي برغي صغير. نظافة مكان العمل بعد الانتهاء تترك انطباعاً ممتازاً.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-17', 
+                            title: 'الحلاقة المنزلية للأطفال وكبار السن', 
+                            shortDesc: 'تقديم خدمة حلاقة مريحة في المنزل للأطفال الذين يخافون من الصالونات أو لكبار السن الذين يصعب عليهم الخروج.', 
+                            imgSrc: 'https://images.pexels.com/photos/11287869/pexels-photo-11287869.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تقديم خدمة حلاقة مريحة في المنزل للأطفال الذين يخافون من الصالونات أو لكبار السن الذين يصعب عليهم الخروج.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> خدمة إنسانية ومريحة تحل مشكلة حقيقية لدى الكثير من العائلات.</p>
+                                <p><strong>متطلبات البدء:</strong> أدوات حلاقة عالية الجودة، صبر ومهارة في التعامل مع الأطفال وكبار السن.</p>
+                                <p><strong>نصيحة ذهبية:</strong> استخدم ماكينة حلاقة ذات صوت منخفض لتقليل خوف الأطفال.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-18', 
+                            title: 'بيع العسل والمنتجات الطبيعية المحلية', 
+                            shortDesc: 'بناء علاقة مع نحالين موثوقين في القرى، وشراء العسل منهم وتعبئته وبيعه في المدينة.', 
+                            imgSrc: 'https://images.pexels.com/photos/3194327/pexels-photo-3194327.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> بناء علاقة مع نحالين موثوقين في القرى، وشراء العسل منهم وتعبئته وبيعه في المدينة.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> الثقة في المنتجات الطبيعية عالية جداً، والناس يبحثون عن الأصالة والجودة.</p>
+                                <p><strong>متطلبات البدء:</strong> مصدر موثوق للمنتج، عبوات زجاجية نظيفة، تصميم ملصق بسيط.</p>
+                                <p><strong>نصيحة ذهبية:</strong> لا تبيع العسل فقط، بل قم ببيع "قصة" العسل (من أي منطقة، من أي زهور). هذا يزيد من قيمته.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-19', 
+                            title: 'تجارة الملابس المستعملة (البالة) - فرز أول', 
+                            shortDesc: 'التخصص في شراء أفضل قطع البالة (الماركات، القطع شبه الجديدة)، ومن ثم تنظيفها وعرضها للبيع بطريقة جذابة.', 
+                            imgSrc: 'https://images.pexels.com/photos/2155544/pexels-photo-2155544.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> التخصص في شراء أفضل قطع البالة (الماركات، القطع شبه الجديدة)، ومن ثم تنظيفها وعرضها للبيع بطريقة جذابة.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> بديل اقتصادي ومستدام للملابس الجديدة. يمكنك تحقيق هامش ربح ممتاز.</p>
+                                <p><strong>متطلبات البدء:</strong> عين خبيرة لاختيار القطع المميزة، مساحة صغيرة للعرض أو صفحة "أونلاين".</p>
+                                <p><strong>نصيحة ذهبية:</strong> ركز على فئة معينة (مثل ملابس الأطفال، القمصان الرجالية، الفساتين) لتصبح وجهة للمهتمين بها.</p>
+                            `
+                        },
+                        { 
+                            id: 'proj-20', 
+                            title: 'مرشد سياحي محلي للمدينة القديمة', 
+                            shortDesc: 'تنظيم جولات تعريفية للسياح والزوار وحتى لأهالي المدينة، لاستكشاف تاريخ وحكايات المدينة القديمة في الموصل.', 
+                            imgSrc: 'https://images.pexels.com/photos/8828679/pexels-photo-8828679.jpeg?auto=compress&cs=tinysrgb&w=1920&dpr=1', 
+                            fullDesc: `
+                                <p><strong>الفكرة باختصار:</strong> تنظيم جولات تعريفية للسياح والزوار وحتى لأهالي المدينة، لاستكشاف تاريخ وحكايات المدينة القديمة في الموصل.</p>
+                                <p><strong>لماذا هو مشروع ناجح؟</strong> شغف متزايد باكتشاف تاريخ المدينة بعد إعادة الحياة إليها. يعتمد على معرفتك وحبك للمكان.</p>
+                                <p><strong>متطلبات البدء:</strong> معرفة عميقة بالتاريخ المحلي، مهارات تواصل جيدة، وقدرة على سرد القصص بشكل شيق.</p>
+                                <p><strong>نصيحة ذهبية:</strong> قم بإعداد "خريطة كنوز" بسيطة للجولة توضح المسار وأهم المحطات. هذه اللمسة تجعل التجربة لا تُنسى.</p>
+                            `
+                        }
+                    ]
+                },
+                { 
+                    id: 'website-ideas', 
+                    title: 'أفكار لمواقع مفيدة', 
+                    viewType: 'full-page', 
+                    items: [
+                        { id: 'widea-1', title: 'منصة "قارنلي"', shortDesc: 'موقع لمقارنة أسعار المنتجات (الإلكترونيات، المواد الغذائية) بين المتاجر الكبرى في العراق.', imgSrc: 'https://images.pexels.com/photos/3735192/pexels-photo-3735192.jpeg', fullDesc: 'يساعد المستخدم على إيجاد أفضل سعر للمنتج الذي يبحث عنه، مما يوفر عليه المال والجهد. يتم تحديث الأسعار بانتظام ويحتوي على مراجعات من المستخدمين.' },
+                        { id: 'widea-2', title: 'دليل "صُنع في العراق"', shortDesc: 'معرض رقمي لعرض المنتجات العراقية عالية الجودة والترويج لها محلياً وعالمياً.', imgSrc: 'https://images.pexels.com/photos/2880872/pexels-photo-2880872.jpeg', fullDesc: 'لكل شركة صفحة خاصة تعرض منتجاتها، قصة نجاحها، وكيفية التواصل معها. الهدف هو تشجيع الصناعة المحلية وزيادة الثقة بالمنتج الوطني.' },
+                        { id: 'widea-3', title: 'موقع "خبير قانوني"', shortDesc: 'منصة تربط الأفراد بمحامين متخصصين للحصول على استشارات قانونية أولية عبر الإنترنت.', imgSrc: 'https://images.pexels.com/photos/7876050/pexels-photo-7876050.jpeg', fullDesc: 'يمكن للمستخدم طرح سؤال عام أو حجز استشارة قصيرة مدفوعة في مجالات مختلفة (أحوال شخصية، عقارات، شركات). يوفر مقالات قانونية مبسطة لزيادة الوعي.' },
+                        { id: 'widea-4', title: '"ذاكرة الموصل"', shortDesc: 'أرشيف رقمي تشاركي يوثق تاريخ الموصل من خلال صور ووثائق وقصص يشاركها أهلها.', imgSrc: 'https://res.cloudinary.com/dxr4htptz/image/upload/v1750943284/80d64d6494d827cb361d3410a37dc0a7_v7vjg1.jpg', fullDesc: 'منصة لحفظ التراث الثقافي للمدينة. يمكن للمستخدمين رفع صور عائلية قديمة، وثائق، أو تسجيل قصص شفهية، مع تحديد الموقع الجغرافي على خريطة تفاعلية.' },
+                        { id: 'widea-5', title: 'سوق "الحرفيين"', shortDesc: 'سوق إلكتروني يجمع الفنانين والحرفيين لبيع أعمالهم اليدوية مباشرة للجمهور.', imgSrc: 'https://images.pexels.com/photos/4427645/pexels-photo-4427645.jpeg', fullDesc: 'مكان لعرض وبيع المنتجات اليدوية الفريدة (خزف، نحاسيات، منسوجات). يوفر نظام دفع آمن وشحن، ويحصل الموقع على عمولة بسيطة من كل عملية بيع.' },
+                        { id: 'widea-6', title: 'منصة "متطوع"', shortDesc: 'تربط الأفراد الراغبين بالتطوع مع المنظمات غير الربحية والفرص التطوعية في منطقتهم.', imgSrc: 'https://images.pexels.com/photos/6646897/pexels-photo-6646897.jpeg', fullDesc: 'يمكن للمنظمات نشر احتياجاتها (مثل حملات تنظيف، مساعدة في فعاليات)، ويمكن للمتطوعين البحث حسب الاهتمام والموقع وتسجيل ساعاتهم التطوعية.' },
+                        { id: 'widea-7', title: '"ويكي المهارات الحياتية"', shortDesc: 'موسوعة معرفية تشاركية تركز على المهارات العملية التي لا تُدرّس في المدارس.', imgSrc: 'https://images.pexels.com/photos/11286166/pexels-photo-11286166.jpeg', fullDesc: 'مقالات حول مواضيع مثل "كيفية إدارة ميزانيتك"، "أساسيات الإسعافات الأولية"، "فن التفاوض"، "التصليحات المنزلية البسيطة". المحتوى يُكتب ويُحسّن بواسطة المجتمع.' },
+                        { id: 'widea-8', title: '"مخطط الرحلات الداخلية"', shortDesc: 'أداة تساعد المستخدم على تخطيط رحلته السياحية داخل العراق (الأهوار، كردستان، المواقع الأثرية).', imgSrc: 'https://images.pexels.com/photos/68704/pexels-photo-68704.jpeg', fullDesc: 'يقترح الموقع مسارات وجداول زمنية بناءً على اهتمامات المستخدم وميزانيته، مع توصيات لأماكن الإقامة والمطاعم والأنشطة في كل منطقة.' },
+                        { id: 'widea-9', title: '"نقطة عبور الكتب"', shortDesc: 'منصة لتبادل الكتب المستعملة بين القراء، إما بالبيع بسعر رمزي أو بالتبادل المباشر.', imgSrc: 'https://images.pexels.com/photos/19972123/pexels-photo-19972123.jpeg', fullDesc: 'يمكن للمستخدم عرض الكتب التي انتهى من قراءتها، والبحث عن كتب جديدة. يحتوي على خريطة تظهر "نقاط آمنة" لتبادل الكتب في الأماكن العامة.' },
+                        { id: 'widea-10', title: '"مدقق الأخبار"', shortDesc: 'موقع مستقل لتدقيق الحقائق ومكافحة الشائعات المنتشرة على وسائل التواصل الاجتماعي.', imgSrc: 'https://images.pexels.com/photos/7876374/pexels-photo-7876374.jpeg', fullDesc: 'يقوم فريق من الباحثين بالتحقق من صحة الأخبار والتصريحات المتداولة، ونشر النتائج مع الأدلة والمصادر، وتصنيف الخبر (صحيح، زائف، مضلل).' },
+                        { id: 'widea-11', title: '"دليلك الزراعي المنزلي"', shortDesc: 'مورد شامل لمن يرغب ببدء الزراعة على سطح أو شرفة منزله.', imgSrc: 'https://images.pexels.com/photos/4503263/pexels-photo-4503263.jpeg', fullDesc: 'يوفر معلومات عن النباتات المناسبة للمناخ المحلي، تقويماً زراعياً، طرق مكافحة الآفات طبيعياً، وكيفية صنع السماد العضوي.' },
+                        { id: 'widea-12', title: '"خريطة الأصوات العالمية"', shortDesc: 'خريطة تفاعلية يمكن للمستخدمين تسجيل ومشاركة الأصوات المميزة من مدنهم.', imgSrc: 'https://images.pexels.com/photos/257904/pexels-photo-257904.jpeg', fullDesc: 'يمكن تسجيل صوت بائع متجول في القاهرة، أو جرس كنيسة في روما. يتيح للزوار استكشاف العالم سمعياً.' },
+                        { id: 'widea-13', title: '"أرشيف الوصفات العائلية"', shortDesc: 'منصة رقمية لحفظ ومشاركة وصفات الطعام العائلية المتوارثة مع قصصها.', imgSrc: 'https://images.pexels.com/photos/833109/pexels-photo-833109.jpeg', fullDesc: 'يمكن لكل مستخدم إنشاء "كتاب طبخ" خاص بعائلته، يضيف فيه وصفات الجدات مع صورها والذكريات المرتبطة بها، ومشاركتها مع الأقارب.' },
+                        { id: 'widea-14', title: '"مساعد اتخاذ القرار"', shortDesc: 'أداة بسيطة تساعدك على اتخاذ القرارات الصعبة من خلال تنظيم الإيجابيات والسلبيات.', imgSrc: 'https://images.pexels.com/photos/7641842/pexels-photo-7641842.jpeg', fullDesc: 'يكتب المستخدم القرار الذي يواجهه، ثم يضيف قائمة بالإيجابيات وقائمة بالسلبيات، مع إمكانية إعطاء "وزن" لكل نقطة. تعرض الأداة النتيجة بشكل مرئي لتسهيل الاختيار.' },
+                        { id: 'widea-15', title: '"مولد الأفكار الإبداعية"', shortDesc: 'أداة بسيطة تولد تركيبات عشوائية لإلهام الفنانين والكتاب والمصممين.', imgSrc: 'https://images.pexels.com/photos/355952/pexels-photo-355952.jpeg', fullDesc: 'يمكن للمستخدم اختيار فئات (مثل: كائن، مكان، شعور) ويقوم الموقع بدمجها عشوائياً لإنتاج فكرة غريبة (مثال: "ساعة حائط حزينة في محطة قطار مهجورة").' },
+                        { id: 'widea-16', title: '"مترجم اللهجات العربية"', shortDesc: 'قاموس تشاركي يترجم الكلمات والعبارات بين اللهجات العربية المختلفة.', imgSrc: 'https://images.pexels.com/photos/20021284/pexels-photo-20021284.jpeg', fullDesc: 'يمكن لمستخدم من المغرب أن يبحث عن معنى كلمة باللهجة العراقية والعكس. يعتمد على مساهمات المستخدمين من جميع أنحاء الوطن العربي ليكون دقيقاً ومحدثاً.' },
+                        { id: 'widea-17', title: '"دليل المستهلك الأخلاقي"', shortDesc: 'يقيم الشركات والعلامات التجارية بناءً على ممارساتها البيئية والاجتماعية.', imgSrc: 'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg', fullDesc: 'يساعد المستهلكين على اتخاذ قرارات شراء واعية من خلال توفير معلومات حول الشركات التي تدعم العمالة العادلة، أو تستخدم مواد مستدامة.' },
+                        { id: 'widea-18', title: 'منصة "العناية بكبار السن"', shortDesc: 'تربط العائلات بمقدمي رعاية موثوقين (ممرضين، جليسي مسنين) لتقديم خدمات في المنزل.', imgSrc: 'https://images.pexels.com/photos/3768131/pexels-photo-3768131.jpeg', fullDesc: 'يمكن لمقدمي الرعاية إنشاء ملفات شخصية بخبراتهم، ويمكن للعائلات البحث عنهم وحجز خدماتهم (بالساعة أو اليوم)، مع نظام تقييم لضمان الجودة.' },
+                        { id: 'widea-19', title: '"مُجمّع الدورات المجانية"', shortDesc: 'موقع يجمع وينظم أفضل الدورات التعليمية المجانية المتاحة على الإنترنت في مكان واحد.', imgSrc: 'https://images.pexels.com/photos/4145153/pexels-photo-4145153.jpeg', fullDesc: 'يبحث الموقع في منصات مثل كورسيرا، إيديكس، ويوتيوب، ويصنف الدورات حسب المجال (برمجة، تسويق، لغات)، مما يسهل على المتعلم إيجاد ما يبحث عنه.' },
+                        { id: 'widea-20', title: '"مدونة السفر البطيء"', shortDesc: 'محتوى يركز على السفر المتعمق والتجارب الثقافية الحقيقية بدلاً من السياحة السريعة.', imgSrc: 'https://images.pexels.com/photos/23153100/pexels-photo-23153100.jpeg', fullDesc: 'مقالات وقصص عن الإقامة في مكان واحد لفترة أطول، تعلم اللغة المحلية، بناء علاقات مع السكان، واكتشاف الأماكن غير السياحية. يلهم نوعاً مختلفاً من السفر.' }
+                    ]
+                },
+                { 
+                    id: 'app-ideas', 
+                    title: 'أفكار لتطبيقات مفيدة', 
+                    viewType: 'full-page',
+                    items: [
+                        { id: 'aidea-1', title: 'تطبيق "صلّحلي"', shortDesc: 'منصة للعثور على فنيي الصيانة المنزلية الموثوقين (سباك، كهربائي) عند الطلب.', imgSrc: 'https://images.pexels.com/photos/3817791/pexels-photo-3817791.jpeg', fullDesc: 'يعرض التطبيق الفنيين المتاحين بالقرب منك مع تقييماتهم وأسعارهم. يمكن طلب الخدمة فوراً أو جدولتها، مع تتبع مباشر للفني وهو في طريقه إليك.' },
+                        { id: 'aidea-2', title: 'تطبيق "جاري"', shortDesc: 'شبكة اجتماعية مصغرة لسكان الحي الواحد لتبادل الأدوات والمساعدة.', imgSrc: 'https://images.pexels.com/photos/8931674/pexels-photo-8931674.jpeg', fullDesc: 'هل تحتاج سلم لدقائق؟ أو مساعدة في حمل شيء ثقيل؟ يتيح لك التطبيق طلب المساعدة من جيرانك الموثوقين أو عرض المساعدة، مما يعزز الروابط المجتمعية.' },
+                        { id: 'aidea-3', title: 'تطبيق "حصالة"', shortDesc: 'يساعدك على الادخار لأهداف محددة من خلال تحديات ممتعة وتتبع مرئي للتقدم.', imgSrc: 'https://images.pexels.com/photos/1602726/pexels-photo-1602726.jpeg', fullDesc: 'تحدد هدفك (شراء هاتف، سفر)، ويقوم التطبيق بإنشاء خطة ادخار. يتضمن "تحديات" مثل "توفير ثمن قهوة اليوم" ورسوم بيانية تحفيزية.' },
+                        { id: 'aidea-4', title: '"وين ناكل؟"', shortDesc: 'تطبيق يقترح عليك مطاعم بناءً على رغبتك الحالية (مشويات، أكل إيطالي) وميزانيتك.', imgSrc: 'https://images.pexels.com/photos/12955615/pexels-photo-12955615.jpeg', fullDesc: 'يستخدم عجلة حظ أو اختبار بسيط لمساعدتك في حسم حيرة اختيار المطعم. يعرض المطاعم القريبة مع تقييمات حقيقية وعروض حصرية لمستخدمي التطبيق.' },
+                        { id: 'aidea-5', title: '"خزانتي"', shortDesc: 'يساعدك على تنظيم ملابسك رقمياً واقتراح أطقم لارتدائها.', imgSrc: 'https://images.pexels.com/photos/5531540/pexels-photo-5531540.jpeg', fullDesc: 'تقوم بتصوير قطع ملابسك مرة واحدة، ويقوم التطبيق بتصنيفها. يمكنك إنشاء أطقم مختلفة، والتطبيق يقترح عليك طقماً بناءً على الطقس أو مناسبة اليوم.' },
+                        { id: 'aidea-6', title: '"مدير الصيانة"', shortDesc: 'يتتبع مواعيد صيانة سيارتك (تغيير زيت، إطارات) وتكاليفها ويرسل لك تذكيرات.', imgSrc: 'https://images.pexels.com/photos/2244746/pexels-photo-2244746.jpeg', fullDesc: 'تدخل معلومات سيارتك، والتطبيق ينشئ سجلاً رقمياً لكل عمليات الصيانة. يمكن ربطه بورش معتمدة لتقديم عروض وخصومات.' },
+                        { id: 'aidea-7', title: '"نبّتة"', shortDesc: 'مساعد ذكي للعناية بالنباتات المنزلية، يشخص الأمراض عبر الصور ويذكرك بمواعيد الري.', imgSrc: 'https://images.pexels.com/photos/9507272/pexels-photo-9507272.jpeg', fullDesc: 'تختار نبتتك من قاعدة بيانات ضخمة، ويقدم التطبيق جدول عناية كامل. ميزة تشخيص الأمراض عبر الكاميرا تقترح حلولاً للمشاكل التي تواجه نباتاتك.' },
+                        { id: 'aidea-8', title: '"ميراث رقمي"', shortDesc: 'خزنة رقمية آمنة لحفظ المستندات الهامة وكلمات المرور ومشاركتها مع الورثة عند الحاجة.', imgSrc: 'https://images.pexels.com/photos/9968416/pexels-photo-9968416.jpeg', fullDesc: 'مساحة مشفرة لحفظ الوصايا، عقود الملكية، وكلمات مرور الحسابات. يمكن للمستخدم تحديد "وريث رقمي" يحصل على إذن الوصول بعد وفاته أو في حالات الطوارئ.' },
+                        { id: 'aidea-9', title: '"وصفة اليوم"', shortDesc: 'تطبيق يقترح وصفات طهي بناءً على المكونات المتوفرة لديك في الثلاجة.', imgSrc: 'https://images.pexels.com/photos/32655181/pexels-photo-32655181.jpeg', fullDesc: 'تدخل المكونات المتاحة لديك، والتطبيق يقدم لك قائمة بالوصفات الممكنة مع تعليمات خطوة بخطوة. يتضمن قائمة تسوق ذكية للمكونات الناقصة.' },
+                        { id: 'aidea-10', title: '"ملعبي"', shortDesc: 'منصة لحجز الملاعب الرياضية (كرة قدم، تنس، بادل) بسهولة وسرعة.', imgSrc: 'https://images.pexels.com/photos/114296/pexels-photo-114296.jpeg', fullDesc: 'يعرض الملاعب المتاحة في منطقتك مع الأسعار والأوقات الشاغرة. يمكن الحجز والدفع مباشرة عبر التطبيق، مع ميزة دعوة الأصدقاء وتقسيم تكلفة الحجز.' },
+                        { id: 'aidea-11', title: '"تاريخنا AR"', shortDesc: 'دليل سياحي يستخدم الواقع المعزز (AR) لإعادة إحياء المواقع الأثرية.', imgSrc: 'https://images.pexels.com/photos/123335/pexels-photo-123335.jpeg', fullDesc: 'عند زيارة موقع تاريخي، توجه كاميرا هاتفك لترى كيف كان يبدو المبنى في الماضي، مع معلومات وقصص تفاعلية تظهر على شاشتك.' },
+                        { id: 'aidea-12', title: '"الواجب"', shortDesc: 'منظم دراسي ذكي للطلاب يخطط الواجبات والمشاريع ومواعيد الاختبارات.', imgSrc: 'https://images.pexels.com/photos/5185082/pexels-photo-5185082.jpeg', fullDesc: 'يقوم الطالب بإدخال جدوله الدراسي والمواعيد النهائية، والتطبيق ينشئ خطة دراسية مخصصة ويقسم المهام الكبيرة إلى أجزاء صغيرة قابلة للإدارة.' },
+                        { id: 'aidea-13', title: '"نادي الكتاب الافتراضي"', shortDesc: 'منصة لإدارة نوادي القراءة، تسهل التصويت على الكتب وتنظيم المناقشات.', imgSrc: 'https://images.pexels.com/photos/4861335/pexels-photo-4861335.jpeg', fullDesc: 'يمكن لمؤسس النادي دعوة الأعضاء، اقتراح كتب للتصويت، وتحديد مواعيد. يحتوي كل كتاب على صفحة نقاش مقسمة حسب الفصول لتجنب حرق الأحداث.' },
+                        { id: 'aidea-14', title: '"صحة العائلة"', shortDesc: 'سجل صحي مشترك وآمن للأسرة، لتتبع مواعيد الأطباء، الأدوية، والتطعيمات.', imgSrc: 'https://images.pexels.com/photos/7220529/pexels-photo-7220529.jpeg', fullDesc: 'يمكن للوالدين إدارة الملف الصحي لأطفالهم، تسجيل أي حالات حساسية، ومشاركة المعلومات بسهولة مع الأطباء عند الحاجة. الخصوصية والأمان هما الأولوية.' },
+                        { id: 'aidea-15', title: '"فصحى"', shortDesc: 'تطبيق لتعلم وتحسين اللغة العربية الفصحى من خلال ألعاب وتحديات يومية.', imgSrc: 'https://images.pexels.com/photos/9127606/pexels-photo-9127606.jpeg', fullDesc: 'يقدم تمارين تفاعلية في النحو، الصرف، والمفردات. يتضمن قصصاً قصيرة واختبارات فهم، مع نظام نقاط ومستويات للتحفيز.' },
+                        { id: 'aidea-16', title: '"مناوبة"', shortDesc: 'ينظم جداول المناوبات في العمل، ويسهل على الموظفين تبديل مناوباتهم مع الزملاء.', imgSrc: 'https://images.pexels.com/photos/7428866/pexels-photo-7428866.jpeg', fullDesc: 'يقوم المدير بإنشاء الجدول، ويمكن للموظف عرض مناوبته للتبديل. يتلقى الزملاء إشعاراً ويمكنهم قبول التبديل بعد موافقة المدير.' },
+                        { id: 'aidea-17', title: '"تحدي الـ 30 يومًا"', shortDesc: 'تختار عادة جديدة كل شهر (رياضة، قراءة) والتطبيق يساعدك على الالتزام بها.', imgSrc: 'https://images.pexels.com/photos/7805662/pexels-photo-7805662.jpeg', fullDesc: 'يقدم أفكارًا لتحديات في مجالات مختلفة. يتتبع تقدمك اليومي ويرسل لك رسائل تحفيزية، مع إمكانية مشاركة التقدم مع الأصدقاء.' },
+                        { id: 'aidea-18', title: '"صفر نفايات"', shortDesc: 'دليلك لتقليل النفايات، يقدم نصائح عملية، بدائل للمنتجات البلاستيكية، وخريطة لمواقع إعادة التدوير.', imgSrc: 'https://images.pexels.com/photos/802221/pexels-photo-802221.jpeg', fullDesc: 'يتضمن تحديات أسبوعية (مثل "أسبوع بدون أكياس بلاستيك")، ووصفات للاستفادة من بقايا الطعام، وقسم لتتبع كمية النفايات التي تم توفيرها.' },
+                        { id: 'aidea-19', title: '"مترجم قائمة الطعام"', shortDesc: 'يترجم قوائم الطعام في المطاعم الأجنبية بمجرد توجيه الكاميرا إليها.', imgSrc: 'https://images.pexels.com/photos/11994131/pexels-photo-11994131.jpeg', fullDesc: 'مفيد جداً أثناء السفر. يستخدم التعرف على النصوص والترجمة الفورية لعرض أسماء الأطباق ومكوناتها بلغتك الأم على الشاشة مباشرة.' },
+                        { id: 'aidea-20', title: '"مؤرشف الإيصالات"', shortDesc: 'يمكنك من تصوير وتخزين وتنظيم جميع إيصالاتك وفواتيرك رقمياً للضمان والمصاريف.', imgSrc: 'https://images.pexels.com/photos/5239883/pexels-photo-5239883.jpeg', fullDesc: 'يقرأ التطبيق تفاصيل الإيصال (المتجر، التاريخ، المبلغ) تلقائياً ويصنفها. يسهل البحث عن فاتورة معينة عند الحاجة إليها لإرجاع منتج أو لتتبع المصاريف.' }
+                    ]
+                }
+            ];
+            
+            let currentItem = null;
+            let lastScrollPosition = 0;
+            let activeCardId = null; 
+
+            const mainView = document.getElementById('main-content-view');
+            const fullPageView = document.getElementById('full-page-view');
+            const detailsModalView = document.getElementById('details-modal-view');
+            const contactModal = document.getElementById('contact-modal');
+            const addContentModal = document.getElementById('add-content-modal');
+            const mobileMenuEl = document.getElementById('mobile-menu');
+            const searchInput = document.getElementById('search-input');
+            const fabContainer = document.getElementById('fab-container');
+
+            function switchView(viewName) {
+                mainView.classList.add('hidden');
+                detailsModalView.classList.add('hidden');
+                fullPageView.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                fabContainer.style.display = 'flex';
+
+                if (viewName === 'main') {
+                    mainView.classList.remove('hidden');
+                    if (activeCardId) {
+                        const activeCard = document.querySelector(`.card[data-item-id='${activeCardId}']`);
+                        if (activeCard) activeCard.scrollIntoView({ behavior: 'auto', block: 'center' });
+                        activeCardId = null;
+                    } else {
+                        window.scrollTo(0, lastScrollPosition);
+                    }
+                } else if (viewName === 'modal') {
+                    lastScrollPosition = window.scrollY;
+                    detailsModalView.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    fabContainer.style.display = 'none';
+                } else if (viewName === 'full-page') {
+                    fullPageView.classList.remove('hidden');
+                    fabContainer.style.display = 'none';
+                    window.scrollTo(0, 0);
+                }
+            }
+
+            function renderMainContent() {
+                let mainHTML = '';
+                let mobileNavHTML = '';
+                const noResultsEl = document.getElementById('no-results-container');
+                appData.forEach((section, index) => {
+                    let cardsHTML = '';
+                    if (!section.items || section.items.length === 0) return;
+                    section.items.forEach(item => {
+                        const buttonsHTML = (section.viewType === 'modal')
+                            ? `<button class="details-btn w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-all" data-item-id="${item.id}" data-section-id="${section.id}">عرض التفاصيل</button>
+                               <a href="${item.externalLink}" target="_blank" rel="noopener noreferrer" class="block text-center w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-700 transition-all">${section.linkText}</a>`
+                            : `<button class="details-btn w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-all" data-item-id="${item.id}" data-section-id="${section.id}">عرض التفاصيل الكاملة</button>`;
+                        
+                        const imageClass = (section.id === 'useful-apps' || section.id === 'useful-channels' || section.id === 'useful-websites') ? 'card-img-adjusted' : '';
+                        
+                        cardsHTML += `
+                            <div class="card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col" data-item-id="${item.id}" data-search-content="${item.title.toLowerCase()} ${item.shortDesc.toLowerCase()}">
+                                <img class="h-48 w-full object-cover ${imageClass}" loading="lazy" src="${item.imgSrc}" alt="${item.title}" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/475569?text=Image+Not+Found';">
+                                <div class="p-6 flex flex-col flex-grow">
+                                    <h3 class="font-bold text-xl mb-2 card-title">${item.title}</h3>
+                                    <p class="text-slate-600 text-sm flex-grow mb-4 card-desc">${item.shortDesc}</p>
+                                    <div class="mt-auto flex flex-col sm:flex-row gap-2">${buttonsHTML}</div>
+                                </div>
+                            </div>`;
+                    });
+
+                    mainHTML += `<section id="${section.id}" class="mb-16"><h2 class="section-title">${section.title}</h2><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${cardsHTML}</div></section>`;
+                    
+                    // Add Ad Placeholder after every 2 sections
+                    if ((index + 1) % 2 === 0 && index < appData.length -1) {
+                        mainHTML += `
+                        <div class="my-8 p-6 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg text-center text-slate-500">
+                            <p class="font-semibold text-lg">مساحة إعلانية</p>
+                        </div>`;
+                    }
+
+                    mobileNavHTML += `<a href="#${section.id}" class="mobile-nav-link block py-2 text-slate-600 hover:text-blue-500">${section.title}</a>`;
+                });
+
+                mainHTML += noResultsEl.outerHTML; 
+                noResultsEl.remove();
+                mobileNavHTML += `<hr class="my-2 border-slate-200"><button id="contact-btn-mobile" class="block w-full text-right py-2 text-slate-600 hover:text-blue-500">تواصل معنا</button>`;
+                mainView.innerHTML = mainHTML;
+                mobileMenuEl.innerHTML = mobileNavHTML;
+            }
+            
+            function renderDetailsModal(item, sectionId) {
+                const apkButtonHTML = (sectionId === 'useful-apps' && item.apkLink) 
+                    ? `<div class="mt-4"><p class="text-xs text-slate-500 mb-1 text-center">لمن لا تتوفر لديهم خدمات جوجل:</p><a href="${item.apkLink}" target="_blank" rel="noopener noreferrer" class="block text-center w-full bg-emerald-500 text-white font-semibold py-3 px-5 rounded-lg hover:bg-emerald-600 transition-all">رابط التطبيق من APK</a></div>` 
+                    : '';
+
+                const adPlaceholderHTML = `
+                    <div class="mt-6 p-4 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg text-center text-slate-500">
+                        <p class="font-semibold text-sm">مساحة إعلانية</p>
+                    </div>`;
+
+                const modalHTML = `
+                    <div class="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-lg h-full max-h-[90vh] flex flex-col relative animate-fade-in">
+                        <button class="close-modal-btn absolute top-4 left-4 text-slate-500 hover:text-red-500 z-10 p-2 rounded-full hover:bg-slate-200 transition-colors"><i class="fas fa-times text-xl"></i></button>
+                        <div class="overflow-y-auto p-6 sm:p-8 pt-16">
+                            <img class="rounded-lg shadow-md w-full mb-4" src="${item.imgSrc}" alt="${item.title}">
+                            <h2 class="text-3xl font-bold mb-2">${item.title}</h2>
+                            <p class="text-slate-600 mb-6">${item.shortDesc}</p>
+                            
+                            <div class="space-y-2">
+                                <a href="${item.externalLink}" target="_blank" rel="noopener noreferrer" class="block text-center w-full bg-blue-500 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-600 transition-all">${item.linkText}</a>
+                                ${apkButtonHTML}
+                            </div>
+                            ${adPlaceholderHTML}
+                        </div>
+                    </div>`;
+                detailsModalView.innerHTML = modalHTML;
+                switchView('modal');
+            }
+            
+            function renderFullPage(item) {
+                const adPlaceholderHTML = `
+                    <div class="my-8 p-6 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg text-center text-slate-500">
+                        <p class="font-semibold text-lg">مساحة إعلانية</p>
+                    </div>`;
+
+                fullPageView.innerHTML = `
+                    <div class="container mx-auto px-6 py-8 animate-fade-in">
+                        <button class="back-to-main-btn mb-8 bg-slate-100 text-slate-700 font-bold py-2 px-4 rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-2"><i class="fas fa-arrow-right"></i> العودة للقائمة الرئيسية</button>
+                        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                            <h2 class="text-3xl md:text-4xl font-bold mb-4">${item.title}</h2>
+                            
+                            <img class="rounded-lg shadow-md w-full h-64 md:h-96 object-cover mb-6" src="${item.imgSrc}" alt="${item.title}">
+                            <div class="prose prose-lg max-w-none text-slate-600 leading-relaxed">${item.fullDesc}</div>
+                            ${adPlaceholderHTML}
+                        </div>
+                    </div>`;
+                switchView('full-page');
+            }
+
+            function createModalHTML(title, content, modalId) {
+                return `<div class="bg-white rounded-2xl shadow-2xl p-8 relative max-w-lg w-full transform transition-all scale-95 opacity-0 animate-fade-in" id="${modalId}-content">
+                            <button class="close-modal-btn absolute top-4 left-4 text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
+                            <h3 class="text-2xl font-bold mb-4 text-center">${title}</h3>
+                            ${content}
+                        </div>`;
+            }
+
+            function toggleModal(modalEl, show) {
+                const modalContent = modalEl.querySelector('.transform');
+                if (show) {
+                    modalEl.classList.remove('hidden');
+                    fabContainer.style.display = 'none';
+                    setTimeout(() => { if(modalContent) modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
+                } else {
+                    if(modalContent) modalContent.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => { modalEl.classList.add('hidden'); fabContainer.style.display = 'flex'; }, 200);
+                }
+            }
+
+            function showAddContentModal() {
+                const formHTML = `
+                    <p class="text-slate-600 text-center mb-6">شكراً لمساهمتك! يرجى ملء الحقول أدناه. ستتم مراجعة الطلب قبل إضافته.</p>
+                    <form id="add-content-form" action="https://formspree.io/f/mzzgklwz" method="POST">
+                        <div class="mb-4">
+                            <label for="content-type" class="block text-sm font-bold text-slate-700 mb-2">اختر نوع المحتوى:</label>
+                            <select id="content-type" name="type" class="w-full p-2 border rounded-md bg-slate-50 focus:ring-2 focus:ring-blue-300 outline-none">
+                                <option value="">-- يرجى الاختيار --</option>
+                                <option value="تطبيق">تطبيق</option>
+                                <option value="موقع">موقع</option>
+                                <option value="قناة">قناة</option>
+                            </select>
+                        </div>
+                        <div id="dynamic-fields" class="space-y-4 hidden">
+                            <div><label for="content-name" class="block text-sm font-bold text-slate-700 mb-1">الاسم أو العنوان:</label><input type="text" id="content-name" name="name" class="w-full p-2 border rounded-md bg-slate-50" required></div>
+                            <div><label for="content-desc" class="block text-sm font-bold text-slate-700 mb-1">وصف بسيط:</label><textarea id="content-desc" name="description" class="w-full p-2 border rounded-md bg-slate-50" rows="3" required></textarea></div>
+                            <div class="hidden" data-field-for="تطبيق موقع قناة"><label for="content-link" class="block text-sm font-bold text-slate-700 mb-1">الرابط:</label><input type="url" id="content-link" name="link" class="w-full p-2 border rounded-md bg-slate-50"></div>
+                        </div>
+                        <button type="submit" class="mt-6 w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-slate-400">إرسال الاقتراح</button>
+                    </form>`;
+                addContentModal.innerHTML = createModalHTML('اقتراح إضافة محتوى', formHTML, 'add-content-modal');
+                toggleModal(addContentModal, true);
+                
+                document.getElementById('content-type').addEventListener('change', (e) => {
+                    const dynamicFields = document.getElementById('dynamic-fields');
+                    const linkField = dynamicFields.querySelector('[data-field-for]');
+                    const selectedValue = e.target.value;
+                    if (!selectedValue) {
+                        dynamicFields.classList.add('hidden');
+                        return;
+                    }
+                    dynamicFields.classList.remove('hidden');
+                    const showLinkFor = linkField.dataset.fieldFor.split(' ');
+                    linkField.parentElement.style.display = showLinkFor.includes(selectedValue) ? 'block' : 'none';
+                    linkField.required = showLinkFor.includes(selectedValue);
+                });
+            }
+
+            function handleBodyClick(e) {
+                const target = e.target;
+                
+                if (target.closest('.details-btn')) {
+                    const detailsBtn = target.closest('.details-btn');
+                    const card = detailsBtn.closest('.card');
+                    if (card) activeCardId = card.dataset.itemId;
+                    
+                    const itemId = detailsBtn.dataset.itemId;
+                    const sectionId = detailsBtn.dataset.sectionId;
+                    for (const section of appData) {
+                        const foundItem = section.items.find(item => item.id === itemId);
+                        if (foundItem) { 
+                            currentItem = { ...foundItem, viewType: section.viewType, linkText: section.linkText }; 
+                            break; 
+                        }
+                    }
+                    if (!currentItem) return;
+
+                    if (currentItem.viewType === 'modal') renderDetailsModal(currentItem, sectionId);
+                    else renderFullPage(currentItem);
+                    
+                    return;
+                }
+                
+                if (target.closest('.back-to-main-btn') || target.closest('.close-modal-btn') || target.id === 'details-modal-view' || target.id === 'contact-modal' || target.id === 'add-content-modal') {
+                    if ((target.id === 'details-modal-view' || target.id === 'contact-modal' || target.id === 'add-content-modal') && target.firstElementChild?.id.includes('content')) {
+                        return;
+                    }
+                    switchView('main');
+                    toggleModal(contactModal, false);
+                    toggleModal(addContentModal, false);
+                    return;
+                }
+                
+                if (target.closest('#contact-btn') || target.closest('#contact-btn-mobile')) {
+                    const contactContent = `<div class="text-center"><i class="fab fa-telegram text-6xl text-blue-500 mb-4"></i><p class="text-slate-600 mb-4">لحل أي مشاكل تواجهك أو لتقديم اقتراحات، يمكنك التواصل معي عبر تيليجرام.</p><a href="https://t.me/F_80TP" target="_blank" rel="noopener noreferrer" class="inline-block bg-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-600 transition-transform hover:scale-105">الانتقال إلى تيليجرام</a></div>`;
+                    contactModal.innerHTML = createModalHTML('تواصل مع المطور', contactContent, 'contact-modal');
+                    toggleModal(contactModal, true);
+                    return;
+                }
+
+                if (target.closest('#fab-main-btn')) { fabContainer.classList.toggle('active'); return; }
+                if (target.closest('#fab-label')) { showAddContentModal(); return; }
+            }
+            
+            function handleSearchInput() {
+                clearTimeout(searchDebounceTimeout);
+                searchDebounceTimeout = setTimeout(() => {
+                    const term = searchInput.value.toLowerCase().trim();
+                    let anyCardVisible = false;
+                    document.querySelectorAll('section').forEach(sec => {
+                        let sectionHasVisibleCard = false;
+                        sec.querySelectorAll('.card').forEach(card => {
+                            const isMatch = card.dataset.searchContent.includes(term);
+                            card.style.display = isMatch ? 'flex' : 'none';
+                            if (isMatch) sectionHasVisibleCard = true;
+                        });
+                        sec.style.display = sectionHasVisibleCard ? 'block' : 'none';
+                        if (sectionHasVisibleCard) anyCardVisible = true;
+                    });
+                    const noResultsEl = mainView.querySelector('#no-results-container');
+                    if (noResultsEl) noResultsEl.style.display = anyCardVisible ? 'none' : 'block';
+                }, 300);
+            }
+
+            document.body.addEventListener('click', handleBodyClick);
+            searchInput.addEventListener('input', handleSearchInput);
+            document.getElementById('mobile-menu-button').addEventListener('click', () => {
+                const isOpening = mobileMenuEl.classList.toggle('hidden');
+                fabContainer.classList.toggle('hidden-by-menu', !isOpening);
+            });
+            mobileMenuEl.addEventListener('click', (e) => { if (e.target.matches('.mobile-nav-link, #contact-btn-mobile')) { mobileMenuEl.classList.add('hidden'); fabContainer.classList.remove('hidden-by-menu'); } });
+            document.getElementById('home-link').addEventListener('click', (e) => { e.preventDefault(); switchView('main'); });
+            
+            renderMainContent();
+        });
+    </script>
+</body>
+</html>
